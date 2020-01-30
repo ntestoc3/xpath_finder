@@ -1,0 +1,9 @@
+^{:watch-dirs ["src/background"]}
+{:output-to     "resources/unpacked/compiled/background/main.js"
+ :output-dir    "resources/unpacked/compiled/background"
+ :asset-path    "compiled/background"
+ :preloads      [devtools.preload figwheel.core figwheel.main figwheel.repl.preload]
+ :main          xpath-finder.background
+ :optimizations :none
+ :source-map    true}
+

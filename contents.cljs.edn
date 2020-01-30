@@ -1,0 +1,11 @@
+^{:watch-dirs ["src/content_script"]}
+{:output-to     "resources/unpacked/compiled/content-script/main.js"
+ :output-dir    "resources/unpacked/compiled/content-script"
+ :asset-path    "compiled/content-script"
+ :main          xpath-finder.content-script
+                                        ;:optimizations :whitespace                                                        ; content scripts cannot do eval / load script dynamically
+ ;; 不能加载figwheel,因为只能在没有优化的情况下加载，会分成很多个文件，
+ ;; 但是content-script不能加载其他js
+ :optimizations :advanced ; let's use advanced build with pseudo-names for now, there seems to be a bug in deps ordering under :whitespace mode
+ :pseudo-names  true
+ :pretty-print  true}

@@ -1,0 +1,9 @@
+^{:watch-dirs ["src/popup"]}
+{:output-to     "resources/unpacked/compiled/popup/main.js"
+ :output-dir    "resources/unpacked/compiled/popup"
+ :asset-path    "compiled/popup"
+ :preloads      [devtools.preload figwheel.core figwheel.main figwheel.repl.preload]
+ :main          xpath-finder.popup
+ :optimizations :none
+ :source-map    true}
+
