@@ -59,6 +59,8 @@
        (str "//")))
 
 (comment
+  ;; 使用序列表示xpath,每一个元素表示xpath的一个层级(level),避免使用一个字符串表示整个xpath
+  ;;  会因为字符串中出现/字符导致路径错误。
   (xpath-add-predicate-to-head ["div" "span" "a"] "[text() = 'aa']")
 
   (xpath-head-has-text? *1)
@@ -69,6 +71,7 @@
 
 ;;;;;;;;;;;;; dom helper
 (defn get-previous-element-siblings
+  "获取所有之前的兄弟元素"
   [element]
   (->> (iterate #(oget % "previousElementSibling") element)
        (take-while identity)))
@@ -135,7 +138,7 @@
                xpath
                (tag-name ancestor))))))
 
-(def ^:dynamic max-text-length 30)
+(def ^:dynamic *max-text-length* 30)
 
 (defn xpath-trans
   [k v]
@@ -152,19 +155,19 @@
 (defn make-xpath-text-exp
   "构造text表达式"
   [s]
-  (let [text-fn-name (if (> (count s) max-text-length)
+  (let [text-fn-name (if (> (count s) *max-text-length*)
                        ;;注意xpath substring第一个位置为1，不是0
-                       (gstring/format "substring(text(),1,%d)" max-text-length)
+                       (gstring/format "substring(text(),1,%d)" *max-text-length*)
                        "text()")
-        target-s (subs s 0 max-text-length)]
+        target-s (subs s 0 *max-text-length*)]
     (->> (xpath-contains-trans text-fn-name target-s)
          (gstring/format "[%s]"))))
 
 (defn make-xpath-attr-predicate
   [attr-key value]
   (let [k (str "@" attr-key)]
-    (if (> (count value) max-text-length)
-      (->> (subs value 0 max-text-length)
+    (if (> (count value) *max-text-length*)
+      (->> (subs value 0 *max-text-length*)
            (xpath-contains-trans k))
       (->> (xpath-trans k value)
            (apply gstring/format "%s='%s'")))))
@@ -319,7 +322,7 @@
 
 (defn find-xpath
   [xpath-list doc element]
-  ;;(.log js/console "xpath-stream:" (str (map xpath->str xpath-list)))
+  ;;(js/console.log "xpath-stream:" (str (map xpath->str xpath-list)))
   (when (seq xpath-list)
     (let [xpath (first xpath-list)
           new-xpath-list (concat (transf-convert-star xpath element)
@@ -329,12 +332,17 @@
                                  (transf-add-attribute-set xpath element)
                                  (transf-add-position xpath element)
                                  (transf-add-level xpath element))
-          paths (vec (distinct new-xpath-list))]
-      (if-let [result  (some #(when (-> (xpath->str %)
-                                        (unique-locate? element doc)) %)
-                             paths)]
-        (xpath->str result)
-        (recur (vec (concat (rest xpath-list) paths))
+          paths (-> new-xpath-list
+                    distinct
+                    vec)]
+      (if-let [result  (->> (map xpath->str paths)
+                            (some #(when (unique-locate? % element doc)
+                                     %)))]
+        result
+        (recur (-> xpath-list
+                   rest
+                   (concat paths)
+                   vec)
                doc
                element)))))
 
